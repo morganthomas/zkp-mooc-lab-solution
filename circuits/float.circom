@@ -252,6 +252,14 @@ template RoundAndCheck(k, p, P) {
     m_out <== if_else[1].out;
 }
 
+function CountBits(x) {
+  if (x == 0) {
+    return 0;
+  } else {
+    return 1 + CountBits(x >> 1);
+  }
+}
+
 /*
  * Left-shifts `x` by `shift` bits to output `y`.
  * Enforces 0 <= `shift` < `shift_bound`.
@@ -262,7 +270,14 @@ template LeftShift(shift_bound) {
     signal input shift;
     signal input skip_checks;
     signal output y;
+    var n = CountBits(shift_bound);
 
+    component shiftBoundCheck = LessThan(n);
+    shiftBoundCheck.in[0] <== (1 - skip_checks) * shift;
+    shiftBoundCheck.in[1] <== (1 - skip_checks) * (shift_bound + skip_checks);
+    shiftBoundCheck.out === 1 - skip_checks;
+
+    y <-- x << shift;
     // TODO
 }
 
