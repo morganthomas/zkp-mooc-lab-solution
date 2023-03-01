@@ -197,8 +197,13 @@ template CheckWellFormedness(k, p) {
 template RightShift(shift) {
     signal input x;
     signal output y;
+    signal lsbs;
 
-    // TODO
+    lsbs <-- x % (2 ** shift);
+    component lsbsRangeCheck = CheckBitLength(shift);
+    lsbsRangeCheck.in <== lsbs;
+    y <-- x >> shift;
+    x === y * (2 ** shift) + lsbs;
 }
 
 /*
