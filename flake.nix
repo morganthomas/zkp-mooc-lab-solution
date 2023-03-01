@@ -13,7 +13,11 @@
         {
           devShells.default =
             pkgs.mkShell {
-              buildInputs = [ circom-out pkgs.nodejs-19_x ];
+              buildInputs = [ circom-out pkgs.nodejs-19_x pkgs.nodePackages.mocha ];
+              shellHook = ''
+npm install
+alias snarkjs="node ./node_modules/snarkjs/cli.js"
+'';
             };
         }
       );
