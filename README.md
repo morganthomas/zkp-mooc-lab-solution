@@ -50,3 +50,11 @@ As a sanity check, the test suite also checks the number of constraints in your 
 # Submission
 
 Use the submission link on the course webpage to submit the deliverables (i.e., `float_add.circom`, `proof.json`, and `verification_key.json`) in a zip file.
+
+# Nix setup
+
+To get a dev shell with circom:
+
+```
+nix develop
+```
