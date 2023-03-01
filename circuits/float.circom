@@ -272,13 +272,23 @@ template LeftShift(shift_bound) {
     signal output y;
     var n = CountBits(shift_bound);
 
+    skip_checks * (1 - skip_checks) === 0;
+
     component shiftBoundCheck = LessThan(n);
     shiftBoundCheck.in[0] <== (1 - skip_checks) * shift;
     shiftBoundCheck.in[1] <== (1 - skip_checks) * (shift_bound + skip_checks);
     shiftBoundCheck.out === 1 - skip_checks;
 
-    y <-- x << shift;
-    // TODO
+    component shiftBits = Num2Bits(n);
+    shiftBits.in <== shift * (1 - skip_checks);
+
+    // y <-- skip_checks == 1 ? 0 : x << shift;
+    signal f[n+1];
+    f[0] <== (1 - skip_checks) * x;
+    for (var i = 0; i < n; i += 1) {
+        f[i+1] <== f[i] * ((1 - shiftBits.bits[i]) + (shiftBits.bits[i] * (2 ** (2 ** i))));
+    }
+    y <== f[n];
 }
 
 /*
