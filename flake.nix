@@ -13,7 +13,7 @@
         {
           devShells.default =
             pkgs.mkShell {
-              buildInputs = [ circom-out ];
+              buildInputs = [ circom-out pkgs.nodejs-19_x ];
             };
         }
       );

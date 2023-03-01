@@ -53,8 +53,10 @@ Use the submission link on the course webpage to submit the deliverables (i.e., 
 
 # Nix setup
 
-To get a dev shell with circom:
+To get a dev shell with circom and nodejs:
 
 ```
 nix develop
 ```
+
+Then `npm install`, etc.
