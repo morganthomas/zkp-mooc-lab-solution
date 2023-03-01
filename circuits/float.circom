@@ -146,7 +146,11 @@ template CheckBitLength(b) {
     signal input in;
     signal output out;
 
-    // TODO
+    out <-- (in <= (2 ** b));
+    out * (out - 1) === 0;
+
+    component bitsCheck = Num2Bits(b);
+    bitsCheck.in <== out * in;
 }
 
 /*
