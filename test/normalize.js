@@ -30,8 +30,7 @@ describe("Normalize", () => {
         };
         const witness = await circ.calculateWitness(input);
         await circ.checkConstraints(witness);
-	// TODO: e_out was originally 121; shouldn't it be 97?
-        await circ.assertOut(witness, {"e_out": "97", "m_out": "164526272020728"});
+        await circ.assertOut(witness, {"e_out": "121", "m_out": "164526272020728"});
     });
 
     it("should pass - already normalized and don't skip checks", async () => {
@@ -42,9 +41,7 @@ describe("Normalize", () => {
         };
         const witness = await circ.calculateWitness(input);
         await circ.checkConstraints(witness);
-	// TODO: e_out was originally 124; shouldn't it be 100 if the input
-	// is already normalized?
-        await circ.assertOut(witness, {"e_out": "100", "m_out": "164526272020728"});
+        await circ.assertOut(witness, {"e_out": "124", "m_out": "164526272020728"});
     });
 
     it("should fail when `m` = 0 - don't skip checks", async () => {

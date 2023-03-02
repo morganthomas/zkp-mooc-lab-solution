@@ -362,7 +362,7 @@ template Normalize(k, p, P) {
           ((2 ** (P-i)) * mMSNZB.one_hot[i] * m);
       partial_e_out_sums[i+1] <==
         partial_e_out_sums[i] +
-          (mMSNZB.one_hot[i] * (e - (P-i)));
+          (mMSNZB.one_hot[i] * (e - (p-i)));
     }
 
     m_out <== partial_m_out_sums[P+1];
