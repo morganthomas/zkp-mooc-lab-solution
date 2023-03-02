@@ -302,7 +302,8 @@ template MSNZB(b) {
     signal input in;
     signal input skip_checks;
     signal output one_hot[b];
-    signal or_left_fold[b+1];
+
+    signal or_fold[b+1];
     component ors[b];
     component ands[b];
     component inZero = IsZero();
@@ -315,19 +316,19 @@ template MSNZB(b) {
     component inBitsCheck = Num2Bits(b);
     inBitsCheck.in <== (1 - skip_checks) * in;
 
-    or_left_fold[0] <== 0;
+    or_fold[0] <== 0;
     for (var i = 0; i < b; i++) {
       ors[i] = OR();
       ands[i] = AND();
-      ors[i].a <== or_left_fold[i];
+      ors[i].a <== or_fold[i];
       ors[i].b <== inBitsCheck.bits[b - (i+1)];
-      or_left_fold[i+1] <== ors[i].out;
-      one_hot[b - (i+1)] <--
-        i == 0 ? inBitsCheck.bits[b - (i+1)]
-               : inBitsCheck.bits[b - (i+1)] && !or_left_fold[i];
-      ands[i].a <== i == 0 ? 1 : 1 - or_left_fold[i];
+      or_fold[i+1] <== ors[i].out;
+      // one_hot[b - (i+1)] <--
+      //   i == 0 ? inBitsCheck.bits[b - (i+1)]
+      //          : inBitsCheck.bits[b - (i+1)] && !or_fold[i];
+      ands[i].a <== i == 0 ? 1 : 1 - or_fold[i];
       ands[i].b <== inBitsCheck.bits[b - (i+1)];
-      one_hot[b - (i+1)] === ands[i].out;
+      one_hot[b - (i+1)] <== ands[i].out;
     }
 }
 
@@ -346,7 +347,26 @@ template Normalize(k, p, P) {
     signal output m_out;
     assert(P > p);
 
-    // TODO
+    component mMSNZB = MSNZB(P+1);
+    mMSNZB.in <== m;
+    mMSNZB.skip_checks <== skip_checks;
+
+    signal partial_m_out_sums[P+2];
+    signal partial_e_out_sums[P+2];
+
+    partial_m_out_sums[0] <== 0;
+    partial_e_out_sums[0] <== 0;
+    for (var i = 0; i < P+1; i += 1) {
+      partial_m_out_sums[i+1] <==
+        partial_m_out_sums[i] +
+          ((2 ** (P-i)) * mMSNZB.one_hot[i] * m);
+      partial_e_out_sums[i+1] <==
+        partial_e_out_sums[i] +
+          (mMSNZB.one_hot[i] * (e - (P-i)));
+    }
+
+    m_out <== partial_m_out_sums[P+1];
+    e_out <== partial_e_out_sums[P+1];
 }
 
 /*
