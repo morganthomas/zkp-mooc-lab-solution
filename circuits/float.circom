@@ -427,33 +427,63 @@ template FloatAdd(k, p) {
     }
 
     component mgn_less = LessThan(k+p+1);
-    mgn_less.a <== mgn[1];
-    mgn_less.b <== mgn[0];
+    mgn_less.in[0] <== mgn[1];
+    mgn_less.in[1] <== mgn[0];
 
     signal e_desc[2];
     signal m_desc[2][2];
 
-    e_desc[0] <== mgn_less.out * e[0] + (1 - mgn_less.out) * e[1];
-    e_desc[1] <== mgn_less.out * e[1] + (1 - mgn_less.out) * e[0];
-    m_desc[0][0] <== mgn_less.out * m[0] + (1 - mgn_less.out) * m[1];
-    m_desc[0][1] <== mgn_less.out * m[1] + (1 - mgn_less.out) * m[0];
+    signal e_desc_part[2][2];
+    signal m_desc_part[2][2];
+    e_desc_part[0][0] <== mgn_less.out * e[0];
+    e_desc_part[0][1] <== (1 - mgn_less.out) * e[1];
+    e_desc[0] <== e_desc_part[0][0] + e_desc_part[0][1];
+    e_desc_part[1][0] <== mgn_less.out * e[1];
+    e_desc_part[1][1] <== (1 - mgn_less.out) * e[0];
+    e_desc[1] <== e_desc_part[1][0] + e_desc_part[1][1];
+    m_desc_part[0][0] <== mgn_less.out * m[0];
+    m_desc_part[0][1] <== (1 - mgn_less.out) * m[1];
+    m_desc[0][0] <== m_desc_part[0][0] + m_desc_part[0][1];
+    m_desc_part[1][0] <== mgn_less.out * m[1];
+    m_desc_part[1][1] <== (1 - mgn_less.out) * m[0];
+    m_desc[0][1] <== m_desc_part[1][0] + m_desc_part[1][1];
 
     signal e_diff;
     e_diff <== e_desc[0] - e_desc[1];
+
+    component diffIsLarge = LessThan(CountBits(2*p+2));
+    diffIsLarge.in[0] <== p + 1;
+    diffIsLarge.in[1] <== e_diff;
+
+    component zeroExponent = IsZero();
+    zeroExponent.in <== e_desc[1];
+
+    component condition = AND();
+    condition.a <== diffIsLarge.out;
+    condition.b <== zeroExponent.in;
 
     m_desc[1][1] <== m_desc[0][1];
     component ls = LeftShift(2*p+2);
     ls.x <== m_desc[0][0];
     ls.shift <== e_diff;
+    ls.skip_checks <== condition.out;
+    m_desc[1][0] <== ls.y;
 
     component norm = Normalize(k, p, 2*p+1);
     norm.e <== e_desc[1];
     norm.m <== m_desc[1][0] + m_desc[1][1];
-    norm.skip_checks <== TODO;
+    norm.skip_checks <== condition.out;
 
     component rc = RoundAndCheck(k, p, 2*p+1);
-    rc.e = norm.e_out;
-    rc.m = norm.m_out;
-    e_out <== rc.e_out;
-    m_out <== rc.m_out;
+    rc.e <== norm.e_out;
+    rc.m <== norm.m_out;
+
+    signal e_out_part[2];
+    signal m_out_part[2];
+    e_out_part[0] <== condition.out * e_desc[0]; 
+    e_out_part[1] <== (1 - condition.out) * rc.e_out;
+    e_out <== e_out_part[0] + e_out_part[1];
+    m_out_part[0] <== condition.out * m_desc[0][0];
+    m_out_part[1] <== (1 - condition.out) * rc.m_out;
+    m_out <== m_out_part[0] + m_out_part[1];
 }
