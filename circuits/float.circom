@@ -369,6 +369,38 @@ template Normalize(k, p, P) {
     e_out <== partial_e_out_sums[P+1];
 }
 
+template FloatWellFormed(k, p) {
+  signal input e;
+  signal input m;
+
+  component eIsZero = IsZero();
+  eIsZero.in <== e;
+  component mIsZero = IsZero();
+  mIsZero.in <== m;
+  component eBitCheck = CheckBitLength(k);
+  eBitCheck.in <== e;
+  component mBitCheck = CheckBitLength(p);
+  mBitCheck.in <== m - (2 ** p);
+
+  // (eIsZero && mIsZero) || (!eIsZero && (eBitCheck && mBitCheck))
+  component e_and_m_are_zero = AND();
+  e_and_m_are_zero.a <== eIsZero.out;
+  e_and_m_are_zero.b <== mIsZero.out;
+
+  component bit_checks = AND();
+  bit_checks.a <== eBitCheck.out;
+  bit_checks.b <== mBitCheck.out;
+
+  component non_zero_case = AND();
+  non_zero_case.a <== 1 - eIsZero.out;
+  non_zero_case.b <== bit_checks.out;
+
+  component or = OR();
+  or.a <== e_and_m_are_zero.out;
+  or.b <== non_zero_case.out;
+  or.out === 1;
+}
+
 /*
  * Adds two floating-point numbers.
  * The inputs are normalized floating-point numbers with `k`-bit exponents `e` and `p`+1-bit mantissas `m` with scale `p`.
@@ -382,5 +414,46 @@ template FloatAdd(k, p) {
     signal output e_out;
     signal output m_out;
 
-    // TODO
+    component wffs[2];
+    for (var i = 0; i < 2; i++) {
+      wffs[i] = FloatWellFormed(k, p);
+      wffs[i].e <== e[i];
+      wffs[i].m <== m[i];
+    }
+
+    signal mgn[2];
+    for (var i = 0; i < 2; i++) {
+      mgn[i] <== e[i] * (2 ** (p+1)) + m[i];
+    }
+
+    component mgn_less = LessThan(k+p+1);
+    mgn_less.a <== mgn[1];
+    mgn_less.b <== mgn[0];
+
+    signal e_desc[2];
+    signal m_desc[2][2];
+
+    e_desc[0] <== mgn_less.out * e[0] + (1 - mgn_less.out) * e[1];
+    e_desc[1] <== mgn_less.out * e[1] + (1 - mgn_less.out) * e[0];
+    m_desc[0][0] <== mgn_less.out * m[0] + (1 - mgn_less.out) * m[1];
+    m_desc[0][1] <== mgn_less.out * m[1] + (1 - mgn_less.out) * m[0];
+
+    signal e_diff;
+    e_diff <== e_desc[0] - e_desc[1];
+
+    m_desc[1][1] <== m_desc[0][1];
+    component ls = LeftShift(2*p+2);
+    ls.x <== m_desc[0][0];
+    ls.shift <== e_diff;
+
+    component norm = Normalize(k, p, 2*p+1);
+    norm.e <== e_desc[1];
+    norm.m <== m_desc[1][0] + m_desc[1][1];
+    norm.skip_checks <== TODO;
+
+    component rc = RoundAndCheck(k, p, 2*p+1);
+    rc.e = norm.e_out;
+    rc.m = norm.m_out;
+    e_out <== rc.e_out;
+    m_out <== rc.m_out;
 }
