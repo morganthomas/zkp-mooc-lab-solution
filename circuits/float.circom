@@ -380,7 +380,7 @@ template FloatWellFormed(k, p) {
   component eBitCheck = CheckBitLength(k);
   eBitCheck.in <== e;
   component mBitCheck = CheckBitLength(p);
-  mBitCheck.in <== m - (2 ** p);
+  mBitCheck.in <== (1 - mIsZero.out) * (m - (2 ** p));
 
   // (eIsZero && mIsZero) || (!eIsZero && (eBitCheck && mBitCheck))
   component e_and_m_are_zero = AND();
@@ -460,7 +460,7 @@ template FloatAdd(k, p) {
 
     component condition = AND();
     condition.a <== diffIsLarge.out;
-    condition.b <== zeroExponent.in;
+    condition.b <== zeroExponent.out;
 
     m_desc[1][1] <== m_desc[0][1];
     component ls = LeftShift(2*p+2);
@@ -469,10 +469,20 @@ template FloatAdd(k, p) {
     ls.skip_checks <== condition.out;
     m_desc[1][0] <== ls.y;
 
+    signal m1;
+    m1 <== m_desc[1][0] + m_desc[1][1];
+
+    component m1zero = IsZero();
+    m1zero.in <== m1;
+
+    component skipNorm = OR();
+    skipNorm.a <== condition.out;
+    skipNorm.b <== m1zero.out;
+
     component norm = Normalize(k, p, 2*p+1);
     norm.e <== e_desc[1];
-    norm.m <== m_desc[1][0] + m_desc[1][1];
-    norm.skip_checks <== condition.out;
+    norm.m <== m1;
+    norm.skip_checks <== skipNorm.out;
 
     component rc = RoundAndCheck(k, p, 2*p+1);
     rc.e <== norm.e_out;
