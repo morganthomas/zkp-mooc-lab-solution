@@ -490,10 +490,10 @@ template FloatAdd(k, p) {
 
     signal e_out_part[2];
     signal m_out_part[2];
-    e_out_part[0] <== condition.out * e_desc[0]; 
-    e_out_part[1] <== (1 - condition.out) * rc.e_out;
+    e_out_part[0] <== skipNorm.out * e_desc[0]; 
+    e_out_part[1] <== (1 - skipNorm.out) * rc.e_out;
     e_out <== e_out_part[0] + e_out_part[1];
-    m_out_part[0] <== condition.out * m_desc[0][0];
-    m_out_part[1] <== (1 - condition.out) * rc.m_out;
+    m_out_part[0] <== skipNorm.out * m_desc[0][0];
+    m_out_part[1] <== (1 - skipNorm.out) * rc.m_out;
     m_out <== m_out_part[0] + m_out_part[1];
 }
