@@ -451,7 +451,7 @@ template FloatAdd(k, p) {
     signal e_diff;
     e_diff <== e_desc[0] - e_desc[1];
 
-    component diffIsLarge = LessThan(CountBits(2*p+2));
+    component diffIsLarge = LessThan(k+1);
     diffIsLarge.in[0] <== p + 1;
     diffIsLarge.in[1] <== e_diff;
 
