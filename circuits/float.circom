@@ -346,6 +346,9 @@ template Normalize(k, p, P) {
     signal output e_out;
     signal output m_out;
     assert(P > p);
+    assert(skip_checks == 1 || m != 0);
+    assert(skip_checks == 1 || skip_checks == 0);
+    assert(m < 2 ** (P+1));
 
     component mMSNZB = MSNZB(P+1);
     mMSNZB.in <== m;
@@ -479,12 +482,12 @@ template FloatAdd(k, p) {
     skipNorm.a <== condition.out;
     skipNorm.b <== m1zero.out;
 
-    component norm = Normalize(k, p, 2*p+1);
+    component norm = Normalize(k, p, 4*p+4);
     norm.e <== e_desc[1];
     norm.m <== m1;
     norm.skip_checks <== skipNorm.out;
 
-    component rc = RoundAndCheck(k, p, 2*p+1);
+    component rc = RoundAndCheck(k, p, 4*p+4);
     rc.e <== norm.e_out;
     rc.m <== norm.m_out;
 
